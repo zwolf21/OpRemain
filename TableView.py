@@ -2,7 +2,7 @@ from operator import itemgetter
 from queue import Queue
 from itertools import groupby, chain
 from fnmatch import fnmatch
-from copy import deepcopy
+from collections import Iterable
 import re
 
 
@@ -39,22 +39,30 @@ class tableview(object):
 		for rec in self.records:
 			rec += [None]*len(new_col_name)
 
-	def order_by(self,  column_bDesc):
-		rngQ = Queue()
-		rngQ.put(slice(0, len(self.records)))
-		while True:
-			colname, bDesc = column_bDesc.pop(0)
-			col, *_ = self._get_record_indexs(colname)
-			while not rngQ.empty():
-				slc = rngQ.get()
-				self.records[slc]=list(sorted(self.records[slc], key=itemgetter(col), reverse=bDesc))
-			if not column_bDesc:
-				break
-			idx = 0
-			for g, l in groupby(self.records, key=itemgetter(col)):
-				cnt = len(list(l))
-				rngQ.put(slice(idx, idx+cnt))
-				idx += cnt
+	# def order_by(self,  column_bDesc):
+	# 	rngQ = Queue()
+	# 	rngQ.put(slice(0, len(self.records)))
+	# 	while True:
+	# 		colname, bDesc = column_bDesc.pop(0)
+	# 		col, *_ = self._get_record_indexs(colname)
+	# 		while not rngQ.empty():
+	# 			slc = rngQ.get()
+	# 			self.records[slc]=list(sorted(self.records[slc], key=itemgetter(col), reverse=bDesc))
+	# 		if not column_bDesc:
+	# 			break
+	# 		idx = 0
+	# 		for g, l in groupby(self.records, key=itemgetter(col)):
+	# 			cnt = len(list(l))
+	# 			rngQ.put(slice(idx, idx+cnt))
+	# 			idx += cnt
+	def order_by(self, *col_sway):
+		sort_way = [w[1] for w in col_sway]
+		sort_col = self._get_record_indexs(*[c[0] for c in col_sway])
+		def key(row):
+			comp_cols=(row[c] for c in sort_col)
+			return  [[ord(c)*way for c in str(word)]  for word, way in zip(comp_cols, sort_way) ]
+		self.records.sort(key=key)
+
 		
 	def get_group(self, column,  reduc_subtotal, **kwargs):
 		col, *_ = self._get_record_indexs(column) 

@@ -61,7 +61,7 @@ class OpRemain(tableview):
 		self.update_records(rm_unit, calc_rm, '처방량(규격단위)')
 		self.update_records(rm_vol, calc_vol, '약품명','잔량(규격단위)')
 		self.update_records('약품명', None, '약품코드', **codeset)
-		self.order_by([('약품명',False), ('불출일자',0)])
+		self.order_by(('약품명',1), ('불출일자',1))
 		sel = self.get_select(True, *self.result_field, **{'처방량(규격단위)':'\d+\.\d+','약품코드':'^7'})
 		self.update_curView(sel)
 		grp = self.get_group('약품명', True,**{rm_unit:len,rm_vol:sum})
