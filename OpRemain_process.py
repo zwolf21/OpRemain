@@ -1,6 +1,6 @@
 from TableView import tableview
 from XlFileMgr import *
-
+from itertools import groupby
 import os, sys, re
 from math import ceil
 
@@ -64,8 +64,9 @@ class OpRemain(tableview):
 		self.order_by(('약품명',1), ('불출일자',1))
 		sel = self.get_select(True, *self.result_field, **{'처방량(규격단위)':'\d+\.\d+','약품코드':'^7'})
 		self.update_curView(sel)
-		grp = self.get_group('약품명', True,**{rm_unit:len,rm_vol:sum})
-		self.update_curView(grp)
+		subtotal = self.get_group('약품명', True,**{rm_unit:len,rm_vol:sum})
+		self.update_curView(subtotal)
+
 
 		return self.get_curView()
 
@@ -81,11 +82,12 @@ class OpRemainSaveTo(xlWriter):
 		min_date, max_date = min(dates), max(dates)
 
 		self.register_style("title","font:height 500;align: horiz center, vertical center")
-		self.register_number_format("ml",'0.0 "ml"')
-		self.register_number_format("mg",'0.0 "mg"')
-		self.register_number_format("g",'0.0 "g"')
-
-		self.set_col_width('sheet1',[120*20,50*20,150*20,100*20,350*20,60*20,60*20,60*20])
+		self.register_style("normal","borders: top thin, left thin, right thin, bottom thin")
+		self.register_style("ml",'borders: top thin, left thin, right thin, bottom thin', num_format_str='0.0 "ml"')
+		self.register_style("mg",'borders: top thin, left thin, right thin, bottom thin', num_format_str='0.0 "mg"')
+		self.register_style("g",'borders: top thin, left thin, right thin, bottom thin', num_format_str='0.0 "g"')
+		
+		self.set_col_width('sheet1',[130*20,50*20,150*20,100*20,400*20,80*20,80*20,80*20])
 		self.shts['sheet1'].row(0).height_mismatch = True
 		self.shts['sheet1'].height = 50*20
 		self.merge_area('sheet1',right=len(self.table[0]), value="{}~{}마약류 잔여량 현황".format(min_date, max_date), style=self.styles['title'])
@@ -93,11 +95,35 @@ class OpRemainSaveTo(xlWriter):
 
 		for r, row in enumerate(self.table,1):
 			for c, data in enumerate(row):
+				if data == '':
+					continue
 				if c == header.index('잔량(함량단위)') and r >1:
-					fmt = self.data_format[unit_ptn2.findall(row[header.index('약품명')])[-1]]
-					self.shts['sheet1'].write(r,c,data, fmt)
+					try:
+						style = self.styles[unit_ptn2.findall(row[header.index('약품명')])[-1]]
+						self.shts['sheet1'].write(r,c,data, style)
+					except:
+						pass
 				else:
-					self.shts['sheet1'].write(r,c,data)
+					self.shts['sheet1'].write(r,c,data, self.styles['normal'])
+
+		grp = []
+		for g, l in groupby(self.table[1:], key=lambda row:row[4]):
+			l = list(l)
+			grp.append(l[-1])
+
+		for r, row in enumerate(grp,len(self.table)+3):	
+			for c, data in enumerate(row):
+				if data == "":
+					continue
+				if c == header.index('잔량(함량단위)'):
+					try:
+						style = self.styles[unit_ptn2.findall(row[header.index('약품명')])[-1]]
+						self.shts['sheet1'].write(r,c,data, style)
+					except:
+						pass
+				else:
+					self.shts['sheet1'].write(r,c,data, self.styles['normal'])					
+
 
 		fname = '{}~{}마약류 잔여량 현황.xls'.format(min_date, max_date)
 		fn, ext = os.path.splitext(fname)

@@ -53,8 +53,8 @@ class xlWriter(object):
 		sht = self.shts[sht_name]
 		sht.write_merge(top, left, bottom, right-1, value, style)
 
-	def register_style(self, style_name, style_sz):
-		self.styles[style_name] = xlwt.easyxf(style_sz)
+	def register_style(self, style_name, style_sz, num_format_str=None):
+		self.styles[style_name] = xlwt.easyxf(style_sz,num_format_str)
 
 	def register_number_format(self, style_name, num_format):
 		style = xlwt.XFStyle()
