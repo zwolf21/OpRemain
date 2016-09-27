@@ -6,7 +6,7 @@ import py2exe, sys
 sys.argv.append("py2exe")
 
 setup(
-	windows=[{'script':"OpRemain.py"}],
+	windows=[{'script':"OpUtil.py"}],
 	options={
 	    "py2exe":{
 	        "packages" : [], "bundle_files":1,
